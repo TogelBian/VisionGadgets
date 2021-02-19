@@ -7,6 +7,7 @@ from torchvision import models,transforms
 from PIL import Image
 from Network import ResNetGenerator,ResNetBlock
 import torch
+import cv2,time
 import torch.nn.functional as f
 
 
@@ -75,3 +76,28 @@ class CycleGAN(object):
         img = Image.open(path)
         out_img = self.return_result(img)
         out_img.show()
+
+
+class SuperResolution(object):
+    def __init__(self):
+        model_name = modelName = "edsr"
+        modelScale = 4
+        self.sr = cv2.dnn_superres.DnnSuperResImpl_create()
+        self.sr.readModel("./models/EDSR_x4.pb")
+        self.sr.setModel(modelName, modelScale)
+
+    def __call__(self, path):
+        image = cv2.imread(path)
+        print("[INFO] w: {}, h: {}".format(image.shape[1], image.shape[0]))
+        # use the super resolution model to upscale the image, timing how
+        # long it takes
+        start = time.time()
+        upscaled = self.sr.upsample(image)
+        end = time.time()
+        print("[INFO] super resolution took {:.6f} seconds".format(
+            end - start))
+        # show the spatial dimensions of the super resolution image
+        print("[INFO] w: {}, h: {}".format(upscaled.shape[1],
+                                           upscaled.shape[0]))
+
+        cv2.imwrite("./data/pictures_out/SuperResolutionResult.jpg", image)
